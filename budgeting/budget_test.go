@@ -13,8 +13,8 @@ func TestBudget_NewBudget(t *testing.T) {
 	budget := NewBudget("My Budget")
 	jan := YearMonth{2018, time.January}
 
-	food := NewCategory("Food & Beverages")
-	bills := NewCategory("Bills")
+	food := budget.AddCategory("Food & Beverages")
+	bills := budget.AddCategory("Bills")
 
 	assert.True(budget.Budgeted(jan, food).Equal(dec("0.00")))
 	assert.True(budget.Budgeted(jan, bills).Equal(dec("0.00")))
@@ -27,8 +27,8 @@ func TestBudget_SetBudgeted(t *testing.T) {
 	jan := YearMonth{2018, time.January}
 	feb := YearMonth{2018, time.February}
 
-	food := NewCategory("Food & Beverages")
-	bills := NewCategory("Bills")
+	food := budget.AddCategory("Food & Beverages")
+	bills := budget.AddCategory("Bills")
 
 	budget.SetBudgeted(jan, food, dec("50.00"))
 	budget.SetBudgeted(jan, bills, dec("12.34"))
@@ -45,8 +45,8 @@ func TestBudget_MoveBudgeted(t *testing.T) {
 	budget := NewBudget("My Budget")
 	jan := YearMonth{2018, time.January}
 
-	food := NewCategory("Food & Beverages")
-	bills := NewCategory("Bills")
+	food := budget.AddCategory("Food & Beverages")
+	bills := budget.AddCategory("Bills")
 
 	budget.SetBudgeted(jan, food, dec("50.00"))
 	budget.SetBudgeted(jan, bills, dec("12.34"))
@@ -74,8 +74,8 @@ func TestBudget_MoveBudgetedEmpty(t *testing.T) {
 	budget := NewBudget("My Budget")
 	jan := YearMonth{2018, time.January}
 
-	food := NewCategory("Food & Beverages")
-	bills := NewCategory("Bills")
+	food := budget.AddCategory("Food & Beverages")
+	bills := budget.AddCategory("Bills")
 
 	budget.MoveBudgeted(jan, food, bills, dec("10.00"))
 	assert.True(budget.Budgeted(jan, food).Equal(dec("-10.00")))

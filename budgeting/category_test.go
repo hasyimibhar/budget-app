@@ -9,8 +9,10 @@ import (
 func TestCategory_Equal(t *testing.T) {
 	assert := assert.New(t)
 
-	c1 := NewCategory("food")
-	c2 := NewCategory("bills")
+	b := NewBudget("My Budget")
+
+	c1 := b.AddCategory("food")
+	c2 := b.AddCategory("bills")
 
 	assert.True(c1.Equal(c1))
 	assert.True(c2.Equal(c2))

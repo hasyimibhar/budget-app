@@ -14,8 +14,10 @@ type YearMonth struct {
 type Budget struct {
 	Name string
 
-	accounts []*Account
-	budgeted map[YearMonth]monthBudget
+	tbb        *Category
+	categories map[string]*Category
+	accounts   []*Account
+	budgeted   map[YearMonth]monthBudget
 }
 
 type monthBudget struct {
@@ -24,12 +26,36 @@ type monthBudget struct {
 }
 
 func NewBudget(name string) *Budget {
-	return &Budget{
+	b := &Budget{
 		Name: name,
 
-		accounts: []*Account{},
-		budgeted: map[YearMonth]monthBudget{},
+		categories: map[string]*Category{},
+		accounts:   []*Account{},
+		budgeted:   map[YearMonth]monthBudget{},
 	}
+
+	tbb := b.AddCategory("To Be Budgeted")
+	b.tbb = tbb
+
+	return b
+}
+
+func (b *Budget) AddAccount(name string, balance decimal.Decimal, date time.Time) *Account {
+	account, _ := newAccount(name, balance, date, b.tbb)
+	b.accounts = append(b.accounts, account)
+	return account
+}
+
+// TBB is a special category which all budget must have.
+func (b *Budget) TBB() *Category {
+	// TBB cannot be modified, so it's cloned to make it read-only
+	return b.tbb.clone()
+}
+
+func (b *Budget) AddCategory(name string) *Category {
+	category := newCategory(name)
+	b.categories[category.uuid] = category
+	return category
 }
 
 func (b *Budget) Budgeted(month YearMonth, category *Category) decimal.Decimal {

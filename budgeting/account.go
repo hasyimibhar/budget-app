@@ -22,7 +22,7 @@ type Account struct {
 	closed       bool
 }
 
-func NewAccount(name string, balance decimal.Decimal, date time.Time, tbb *Category) (*Account, error) {
+func newAccount(name string, balance decimal.Decimal, date time.Time, tbb *Category) (*Account, error) {
 	a := &Account{
 		Name: name,
 

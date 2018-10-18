@@ -10,7 +10,7 @@ type Category struct {
 	uuid string
 }
 
-func NewCategory(name string) *Category {
+func newCategory(name string) *Category {
 	return &Category{
 		Name: name,
 		uuid: uuid.NewV4().String(),
@@ -23,4 +23,11 @@ func (c *Category) Equal(other *Category) bool {
 	}
 
 	return c.uuid == other.uuid
+}
+
+func (c *Category) clone() *Category {
+	return &Category{
+		Name: c.Name,
+		uuid: c.uuid,
+	}
 }
