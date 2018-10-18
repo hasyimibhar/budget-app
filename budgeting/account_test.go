@@ -11,14 +11,24 @@ import (
 func TestAccount_NewAccount(t *testing.T) {
 	assert := assert.New(t)
 
-	account := NewAccount("Savings Account")
+	account := NewAccount("Savings Account", dec("0.00"), date(2018, 1, 1))
 	assert.True(account.Balance().Equal(dec("0.00")))
+}
+
+func TestAccount_NewAccountWithBalance(t *testing.T) {
+	assert := assert.New(t)
+
+	account := NewAccount("Savings Account", dec("5.00"), date(2018, 1, 1))
+	assert.True(account.Balance().Equal(dec("5.00")))
+
+	account = NewAccount("Savings Account", dec("-12.34"), date(2018, 1, 1))
+	assert.True(account.Balance().Equal(dec("-12.34")))
 }
 
 func TestAccount_AddTransaction(t *testing.T) {
 	assert := assert.New(t)
 
-	account := NewAccount("Savings Account")
+	account := NewAccount("Savings Account", dec("0.00"), date(2018, 1, 1))
 	tbb := NewCategory("To Be Budgeted")
 	food := NewCategory("Food & Beverages")
 	bills := NewCategory("Bills")
@@ -45,8 +55,8 @@ func TestAccount_AddTransaction(t *testing.T) {
 func TestAccount_AddTransactionDoubleEntry(t *testing.T) {
 	assert := assert.New(t)
 
-	account := NewAccount("Savings Account")
-	wallet := NewAccount("Wallet")
+	account := NewAccount("Savings Account", dec("0.00"), date(2018, 1, 1))
+	wallet := NewAccount("Wallet", dec("0.00"), date(2018, 1, 1))
 	tbb := NewCategory("To Be Budgeted")
 	food := NewCategory("Food & Beverages")
 
@@ -76,7 +86,7 @@ func TestAccount_AddTransactionDoubleEntry(t *testing.T) {
 func TestAccount_AddTransactionIncomeExpenseWithoutCategory(t *testing.T) {
 	assert := assert.New(t)
 
-	account := NewAccount("Savings Account")
+	account := NewAccount("Savings Account", dec("0.00"), date(2018, 1, 1))
 
 	tr, err := account.AddTransaction(date(2018, 1, 1), dec("10.00"), "got some money", nil, nil)
 	assert.Nil(tr)
@@ -92,8 +102,8 @@ func TestAccount_AddTransactionIncomeExpenseWithoutCategory(t *testing.T) {
 func TestAccount_AddTransactionTransferWithCategory(t *testing.T) {
 	assert := assert.New(t)
 
-	account := NewAccount("Savings Account")
-	wallet := NewAccount("Wallet")
+	account := NewAccount("Savings Account", dec("0.00"), date(2018, 1, 1))
+	wallet := NewAccount("Wallet", dec("0.00"), date(2018, 1, 1))
 	tbb := NewCategory("To Be Budgeted")
 	food := NewCategory("Food & Beverages")
 

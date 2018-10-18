@@ -20,13 +20,17 @@ type Account struct {
 	closed       bool
 }
 
-func NewAccount(name string) *Account {
-	return &Account{
+func NewAccount(name string, balance decimal.Decimal, date time.Time) *Account {
+	a := &Account{
 		Name: name,
 
 		transactions: []*Transaction{},
 		closed:       false,
 	}
+
+	a.AddTransaction(date, balance, "Starting balance", ToBeBudgeted, nil)
+
+	return a
 }
 
 func (a *Account) AddTransaction(
