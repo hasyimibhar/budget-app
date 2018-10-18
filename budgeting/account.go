@@ -18,14 +18,16 @@ var (
 type Account struct {
 	Name string
 
+	budget       *Budget
 	transactions []*Transaction
 	closed       bool
 }
 
-func newAccount(name string, balance decimal.Decimal, date time.Time, tbb *Category) (*Account, error) {
+func newAccount(budget *Budget, name string, balance decimal.Decimal, date time.Time, tbb *Category) (*Account, error) {
 	a := &Account{
 		Name: name,
 
+		budget:       budget,
 		transactions: []*Transaction{},
 		closed:       false,
 	}
@@ -50,12 +52,21 @@ func (a *Account) AddTransaction(
 		return nil, ErrCannotAssignCategoryToTransfer
 	}
 
-	t := newTransaction(date, amount, description, category, rel)
+	t := newTransaction(a.budget, date, amount, description, category, rel)
 	a.transactions = append(a.transactions, t)
 
 	if rel != nil {
-		t2 := newTransaction(date, amount.Neg(), description, category, a)
+		t2 := newTransaction(a.budget, date, amount.Neg(), description, category, a)
 		rel.transactions = append(rel.transactions, t2)
+	} else if category.Equal(a.budget.TBBCategory()) {
+		a.budget.addTBBTransaction(YearMonthFromTime(date), t)
+	}
+
+	if a.budget.earliestMonth.EarlierTime(date) {
+		a.budget.earliestMonth = YearMonthFromTime(date)
+	}
+	if a.budget.latestMonth.LaterTime(date) {
+		a.budget.latestMonth = YearMonthFromTime(date)
 	}
 
 	return t, nil

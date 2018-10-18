@@ -8,23 +8,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var month = YearMonth{2018, time.January}
+
 func TestAccount_NewAccount(t *testing.T) {
 	assert := assert.New(t)
 	b := NewBudget("My Budget")
 
 	account := b.AddAccount("Savings Account", dec("0.00"), date(2018, 1, 1))
 	assert.True(account.Balance().Equal(dec("0.00")))
+	assert.True(b.TBB(month).Equal(dec("0.00")))
 }
 
 func TestAccount_NewAccountWithBalance(t *testing.T) {
 	assert := assert.New(t)
 	b := NewBudget("My Budget")
 
-	account := b.AddAccount("Savings Account", dec("5.00"), date(2018, 1, 1))
-	assert.True(account.Balance().Equal(dec("5.00")))
+	a1 := b.AddAccount("Savings Account 1", dec("5.00"), date(2018, 1, 1))
+	assert.True(a1.Balance().Equal(dec("5.00")))
+	assert.True(b.TBB(month).Equal(dec("5.00")))
 
-	account = b.AddAccount("Savings Account", dec("-12.34"), date(2018, 1, 1))
-	assert.True(account.Balance().Equal(dec("-12.34")))
+	a2 := b.AddAccount("Savings Account 2", dec("-12.34"), date(2018, 1, 1))
+	assert.True(a2.Balance().Equal(dec("-12.34")))
+	assert.True(b.TBB(month).Equal(dec("-7.34")))
 }
 
 func TestAccount_AddTransaction(t *testing.T) {
@@ -37,16 +42,16 @@ func TestAccount_AddTransaction(t *testing.T) {
 
 	var tr *Transaction
 
-	tr, _ = account.AddTransaction(date(2018, 1, 1), dec("12.34"), "got some money yo", b.TBB(), nil)
-	assert.True(tr.Category().Equal(b.TBB()))
+	tr, _ = account.AddTransaction(date(2018, 1, 1), dec("12.34"), "got some money yo", b.TBBCategory(), nil)
+	assert.True(tr.Category().Equal(b.TBBCategory()))
 	assert.True(account.Balance().Equal(dec("12.34")))
 
 	tr, _ = account.AddTransaction(date(2018, 1, 1), dec("-4.11"), "hungry", food, nil)
 	assert.True(tr.Category().Equal(food))
 	assert.True(account.Balance().Equal(dec("8.23")))
 
-	tr, _ = account.AddTransaction(date(2018, 1, 1), dec("10.00"), "found some money on the ground", b.TBB(), nil)
-	assert.True(tr.Category().Equal(b.TBB()))
+	tr, _ = account.AddTransaction(date(2018, 1, 1), dec("10.00"), "found some money on the ground", b.TBBCategory(), nil)
+	assert.True(tr.Category().Equal(b.TBBCategory()))
 	assert.True(account.Balance().Equal(dec("18.23")))
 
 	tr, _ = account.AddTransaction(date(2018, 1, 1), dec("-21.5"), "im broke", bills, nil)
@@ -64,7 +69,7 @@ func TestAccount_AddTransactionDoubleEntry(t *testing.T) {
 
 	var tr *Transaction
 
-	account.AddTransaction(date(2018, 1, 1), dec("10.00"), "got some money", b.TBB(), nil)
+	account.AddTransaction(date(2018, 1, 1), dec("10.00"), "got some money", b.TBBCategory(), nil)
 	tr, _ = account.AddTransaction(date(2018, 1, 1), dec("-5.00"), "withdraw to wallet", nil, wallet)
 	assert.Nil(tr.Category())
 
@@ -110,7 +115,7 @@ func TestAccount_AddTransactionTransferWithCategory(t *testing.T) {
 	wallet := b.AddAccount("Wallet", dec("0.00"), date(2018, 1, 1))
 	food := b.AddCategory("Food & Beverages")
 
-	account.AddTransaction(date(2018, 1, 1), dec("10.00"), "got some money", b.TBB(), nil)
+	account.AddTransaction(date(2018, 1, 1), dec("10.00"), "got some money", b.TBBCategory(), nil)
 
 	tr, err := account.AddTransaction(date(2018, 1, 1), dec("-5.00"), "withdraw to wallet", food, wallet)
 	assert.Nil(tr)

@@ -13,11 +13,13 @@ type Transaction struct {
 	Amount      decimal.Decimal
 
 	uuid     string
+	budget   *Budget
 	category *Category
 	rel      *Account
 }
 
 func newTransaction(
+	budget *Budget,
 	date time.Time,
 	amount decimal.Decimal,
 	description string,
@@ -30,6 +32,7 @@ func newTransaction(
 		Description: description,
 
 		uuid:     uuid.NewV4().String(),
+		budget:   budget,
 		category: category,
 		rel:      rel,
 	}
