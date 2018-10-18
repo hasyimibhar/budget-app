@@ -1,10 +1,16 @@
 package budgeting
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
 	"github.com/shopspring/decimal"
+)
+
+var (
+	ErrMustHaveCategory               = fmt.Errorf("an income or expense must have category")
+	ErrCannotAssignCategoryToTransfer = fmt.Errorf("a transfer cannot have category")
 )
 
 type Account struct {
@@ -27,17 +33,24 @@ func (a *Account) AddTransaction(
 	date time.Time,
 	amount decimal.Decimal,
 	description string,
-	rel *Account) *Transaction {
+	category *Category,
+	rel *Account) (*Transaction, error) {
 
-	t := newTransaction(date, amount, description, rel)
+	if rel == nil && category == nil {
+		return nil, ErrMustHaveCategory
+	} else if rel != nil && category != nil {
+		return nil, ErrCannotAssignCategoryToTransfer
+	}
+
+	t := newTransaction(date, amount, description, category, rel)
 	a.transactions = append(a.transactions, t)
 
 	if rel != nil {
-		t2 := newTransaction(date, amount.Neg(), description, a)
+		t2 := newTransaction(date, amount.Neg(), description, category, a)
 		rel.transactions = append(rel.transactions, t2)
 	}
 
-	return t
+	return t, nil
 }
 
 func (a *Account) Balance() decimal.Decimal {
