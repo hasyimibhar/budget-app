@@ -10,13 +10,6 @@ type Category struct {
 	uuid string
 }
 
-// ToBeBudgeted is a special category that all budget
-// will have.
-var ToBeBudgeted = &Category{
-	Name: "To Be Budgeted",
-	uuid: "tbb",
-}
-
 func NewCategory(name string) *Category {
 	return &Category{
 		Name: name,

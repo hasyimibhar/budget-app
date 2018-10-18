@@ -9,6 +9,8 @@ import (
 )
 
 var (
+	zero = decimal.New(0, -2)
+
 	ErrMustHaveCategory               = fmt.Errorf("an income or expense must have category")
 	ErrCannotAssignCategoryToTransfer = fmt.Errorf("a transfer cannot have category")
 )
@@ -20,7 +22,7 @@ type Account struct {
 	closed       bool
 }
 
-func NewAccount(name string, balance decimal.Decimal, date time.Time) *Account {
+func NewAccount(name string, balance decimal.Decimal, date time.Time, tbb *Category) (*Account, error) {
 	a := &Account{
 		Name: name,
 
@@ -28,9 +30,11 @@ func NewAccount(name string, balance decimal.Decimal, date time.Time) *Account {
 		closed:       false,
 	}
 
-	a.AddTransaction(date, balance, "Starting balance", ToBeBudgeted, nil)
+	if _, err := a.AddTransaction(date, balance, "Starting balance", tbb, nil); err != nil {
+		return nil, err
+	}
 
-	return a
+	return a, nil
 }
 
 func (a *Account) AddTransaction(
@@ -61,7 +65,7 @@ func (a *Account) Balance() decimal.Decimal {
 	transactions := a.transactions
 	sort.Sort(byDate(transactions))
 
-	balance := decimal.New(0, -2)
+	balance := zero
 	for _, t := range transactions {
 		balance = balance.Add(t.Amount)
 	}
