@@ -13,14 +13,16 @@ type Transaction struct {
 	Amount      decimal.Decimal
 
 	uuid string
+	rel  *Account
 }
 
-func NewTransaction(date time.Time, amount decimal.Decimal, description string) *Transaction {
+func newTransaction(date time.Time, amount decimal.Decimal, description string, rel *Account) *Transaction {
 	return &Transaction{
 		Date:        date,
 		Amount:      amount,
 		Description: description,
 
 		uuid: uuid.NewV4().String(),
+		rel:  rel,
 	}
 }

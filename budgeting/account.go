@@ -23,9 +23,20 @@ func NewAccount(name string) *Account {
 	}
 }
 
-func (a *Account) AddTransaction(date time.Time, amount decimal.Decimal, description string) *Transaction {
-	t := NewTransaction(date, amount, description)
+func (a *Account) AddTransaction(
+	date time.Time,
+	amount decimal.Decimal,
+	description string,
+	rel *Account) *Transaction {
+
+	t := newTransaction(date, amount, description, rel)
 	a.transactions = append(a.transactions, t)
+
+	if rel != nil {
+		t2 := newTransaction(date, amount.Neg(), description, a)
+		rel.transactions = append(rel.transactions, t2)
+	}
+
 	return t
 }
 
