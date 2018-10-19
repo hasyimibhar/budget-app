@@ -7,6 +7,13 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type TransactionType int
+
+const (
+	TransactionTypeIncomeExpense TransactionType = iota + 1
+	TransactionTypeTransfer
+)
+
 type Transaction struct {
 	Date        time.Time
 	Description string
@@ -45,6 +52,14 @@ func (t *Transaction) Category() *Category {
 	return t.category
 }
 
-func (t *Transaction) SetCategory(category *Category) {
-	t.budget.setTransactionCategory(t, category)
+func (t *Transaction) SetCategory(category *Category) error {
+	return t.budget.setTransactionCategory(t, category)
+}
+
+func (t *Transaction) Type() TransactionType {
+	if t.rel == nil {
+		return TransactionTypeIncomeExpense
+	}
+
+	return TransactionTypeTransfer
 }

@@ -241,3 +241,86 @@ func TestBudget_Activities(t *testing.T) {
 	assert.Equal(dec("-4.00").StringFixed(2), bills.Activities(feb).StringFixed(2))
 	assert.Equal(dec("13.00").StringFixed(2), bills.Available(feb).StringFixed(2))
 }
+
+func TestBudget_SetCategory(t *testing.T) {
+	assert := assert.New(t)
+
+	budget := NewBudget("My Budget")
+	jan := YearMonth{2018, time.January}
+
+	acc := budget.AddAccount("Savings", dec("100.00"), date(2018, 1, 1))
+	food := budget.AddCategory("Food")
+	bills := budget.AddCategory("Bills")
+
+	budget.SetBudgeted(jan, food, dec("50.00"))
+	budget.SetBudgeted(jan, bills, dec("50.00"))
+
+	tr, _ := acc.AddTransaction(date(2018, 1, 2), dec("-5.00"), "lunch", food, nil)
+
+	assert.Equal(dec("50.00").StringFixed(2), food.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("-5.00").StringFixed(2), food.Activities(jan).StringFixed(2))
+	assert.Equal(dec("45.00").StringFixed(2), food.Available(jan).StringFixed(2))
+
+	assert.Equal(dec("50.00").StringFixed(2), bills.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), bills.Activities(jan).StringFixed(2))
+	assert.Equal(dec("50.00").StringFixed(2), bills.Available(jan).StringFixed(2))
+
+	err := tr.SetCategory(bills)
+	assert.Nil(err)
+
+	assert.Equal(dec("50.00").StringFixed(2), food.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), food.Activities(jan).StringFixed(2))
+	assert.Equal(dec("50.00").StringFixed(2), food.Available(jan).StringFixed(2))
+
+	assert.Equal(dec("50.00").StringFixed(2), bills.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("-5.00").StringFixed(2), bills.Activities(jan).StringFixed(2))
+	assert.Equal(dec("45.00").StringFixed(2), bills.Available(jan).StringFixed(2))
+
+	err = tr.SetCategory(nil)
+	assert.Nil(err)
+
+	assert.Equal(dec("50.00").StringFixed(2), food.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), food.Activities(jan).StringFixed(2))
+	assert.Equal(dec("50.00").StringFixed(2), food.Available(jan).StringFixed(2))
+
+	assert.Equal(dec("50.00").StringFixed(2), bills.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), bills.Activities(jan).StringFixed(2))
+	assert.Equal(dec("50.00").StringFixed(2), bills.Available(jan).StringFixed(2))
+}
+
+func TestBudget_SetCategoryTransfer(t *testing.T) {
+	assert := assert.New(t)
+
+	budget := NewBudget("My Budget")
+	jan := YearMonth{2018, time.January}
+
+	acc := budget.AddAccount("Savings", dec("100.00"), date(2018, 1, 1))
+	wallet := budget.AddAccount("Wallet", dec("0.00"), date(2018, 1, 1))
+	food := budget.AddCategory("Food")
+	bills := budget.AddCategory("Bills")
+
+	budget.SetBudgeted(jan, food, dec("50.00"))
+	budget.SetBudgeted(jan, bills, dec("50.00"))
+
+	tr, _ := acc.AddTransaction(date(2018, 1, 2), dec("-5.00"), "lunch", nil, wallet)
+
+	assert.Equal(dec("50.00").StringFixed(2), food.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), food.Activities(jan).StringFixed(2))
+	assert.Equal(dec("50.00").StringFixed(2), food.Available(jan).StringFixed(2))
+
+	assert.Equal(dec("50.00").StringFixed(2), bills.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), bills.Activities(jan).StringFixed(2))
+	assert.Equal(dec("50.00").StringFixed(2), bills.Available(jan).StringFixed(2))
+
+	err := tr.SetCategory(bills)
+	assert.NotNil(err)
+	assert.EqualError(err, ErrCannotAssignCategoryToTransfer.Error())
+
+	assert.Equal(dec("50.00").StringFixed(2), food.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), food.Activities(jan).StringFixed(2))
+	assert.Equal(dec("50.00").StringFixed(2), food.Available(jan).StringFixed(2))
+
+	assert.Equal(dec("50.00").StringFixed(2), bills.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), bills.Activities(jan).StringFixed(2))
+	assert.Equal(dec("50.00").StringFixed(2), bills.Available(jan).StringFixed(2))
+}

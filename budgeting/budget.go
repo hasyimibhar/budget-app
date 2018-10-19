@@ -201,7 +201,11 @@ func (b *Budget) MoveBudgeted(month YearMonth, from *Category, to *Category, amo
 	b.SetBudgeted(month, to, toAmount)
 }
 
-func (b *Budget) setTransactionCategory(t *Transaction, c *Category) {
+func (b *Budget) setTransactionCategory(t *Transaction, c *Category) error {
+	if t.Type() == TransactionTypeTransfer {
+		return ErrCannotAssignCategoryToTransfer
+	}
+
 	transactions := []*Transaction{}
 
 	if t.Category() != nil {
@@ -225,6 +229,7 @@ func (b *Budget) setTransactionCategory(t *Transaction, c *Category) {
 	}
 
 	t.category = c
+	return nil
 }
 
 func (b *Budget) monthCategoryTransactions(month YearMonth, c *Category) []*Transaction {
