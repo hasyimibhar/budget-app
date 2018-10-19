@@ -139,6 +139,15 @@ func TestBudget_TBB(t *testing.T) {
 	assert.Equal(dec("-15.00").StringFixed(2), budget.TBB(sep).StringFixed(2))
 	assert.Equal(dec("85.00").StringFixed(2), budget.TBB(oct).StringFixed(2))
 	assert.Equal(dec("85.00").StringFixed(2), budget.TBB(nov).StringFixed(2))
+
+	budget.SetBudgeted(aug, food, dec("30.00"))
+	budget.SetBudgeted(oct, food, dec("20.00"))
+	acc.AddTransaction(date(2018, 9, 1), dec("5.00"), "test", budget.TBBCategory(), nil)
+
+	assert.Equal(dec("-20.00").StringFixed(2), budget.TBB(aug).StringFixed(2))
+	assert.Equal(dec("-35.00").StringFixed(2), budget.TBB(sep).StringFixed(2))
+	assert.Equal(dec("45.00").StringFixed(2), budget.TBB(oct).StringFixed(2))
+	assert.Equal(dec("45.00").StringFixed(2), budget.TBB(nov).StringFixed(2))
 }
 
 func TestBudget_MoveBudgetedEmpty(t *testing.T) {
@@ -153,4 +162,61 @@ func TestBudget_MoveBudgetedEmpty(t *testing.T) {
 	budget.MoveBudgeted(jan, food, bills, dec("10.00"))
 	assert.True(budget.Budgeted(jan, food).Equal(dec("-10.00")))
 	assert.True(budget.Budgeted(jan, bills).Equal(dec("10.00")))
+}
+
+func TestBudget_Activities(t *testing.T) {
+	assert := assert.New(t)
+
+	budget := NewBudget("My Budget")
+	dcm := YearMonth{2017, time.December}
+	jan := YearMonth{2018, time.January}
+	feb := YearMonth{2018, time.February}
+	mar := YearMonth{2018, time.March}
+
+	acc := budget.AddAccount("Savings", dec("100.00"), date(2018, 1, 1))
+	food := budget.AddCategory("Food")
+	bills := budget.AddCategory("Bills")
+
+	budget.SetBudgeted(jan, food, dec("50.00"))
+	budget.SetBudgeted(jan, bills, dec("50.00"))
+
+	acc.AddTransaction(date(2018, 1, 2), dec("-5.00"), "lunch", food, nil)
+	acc.AddTransaction(date(2018, 1, 5), dec("-3.00"), "dinner", food, nil)
+	acc.AddTransaction(date(2018, 1, 2), dec("-23.00"), "electricity", bills, nil)
+	acc.AddTransaction(date(2018, 1, 3), dec("-10.00"), "topup phone", bills, nil)
+
+	acc.AddTransaction(date(2018, 2, 10), dec("-15.00"), "fancy dinner", food, nil)
+	acc.AddTransaction(date(2018, 2, 2), dec("-4.00"), "water bill", bills, nil)
+
+	assert.Equal(dec("50.00").StringFixed(2), food.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("-8.00").StringFixed(2), food.Activities(jan).StringFixed(2))
+	assert.Equal(dec("42.00").StringFixed(2), food.Available(jan).StringFixed(2))
+
+	assert.Equal(dec("50.00").StringFixed(2), bills.Budgeted(jan).StringFixed(2))
+	assert.Equal(dec("-33.00").StringFixed(2), bills.Activities(jan).StringFixed(2))
+	assert.Equal(dec("17.00").StringFixed(2), bills.Available(jan).StringFixed(2))
+
+	assert.Equal(dec("0.00").StringFixed(2), food.Budgeted(feb).StringFixed(2))
+	assert.Equal(dec("-15.00").StringFixed(2), food.Activities(feb).StringFixed(2))
+	assert.Equal(dec("27.00").StringFixed(2), food.Available(feb).StringFixed(2))
+
+	assert.Equal(dec("0.00").StringFixed(2), bills.Budgeted(feb).StringFixed(2))
+	assert.Equal(dec("-4.00").StringFixed(2), bills.Activities(feb).StringFixed(2))
+	assert.Equal(dec("13.00").StringFixed(2), bills.Available(feb).StringFixed(2))
+
+	assert.Equal(dec("0.00").StringFixed(2), food.Budgeted(dcm).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), food.Activities(dcm).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), food.Available(dcm).StringFixed(2))
+
+	assert.Equal(dec("0.00").StringFixed(2), bills.Budgeted(dcm).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), bills.Activities(dcm).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), bills.Available(dcm).StringFixed(2))
+
+	assert.Equal(dec("0.00").StringFixed(2), food.Budgeted(mar).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), food.Activities(mar).StringFixed(2))
+	assert.Equal(dec("27.00").StringFixed(2), food.Available(mar).StringFixed(2))
+
+	assert.Equal(dec("0.00").StringFixed(2), bills.Budgeted(mar).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), bills.Activities(mar).StringFixed(2))
+	assert.Equal(dec("13.00").StringFixed(2), bills.Available(mar).StringFixed(2))
 }

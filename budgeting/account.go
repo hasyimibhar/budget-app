@@ -18,18 +18,20 @@ var (
 type Account struct {
 	Name string
 
-	budget       *Budget
-	transactions []*Transaction
-	closed       bool
+	budget              *Budget
+	transactions        []*Transaction
+	transactionCategory map[string][]*Transaction
+	closed              bool
 }
 
 func newAccount(budget *Budget, name string, balance decimal.Decimal, date time.Time, tbb *Category) (*Account, error) {
 	a := &Account{
 		Name: name,
 
-		budget:       budget,
-		transactions: []*Transaction{},
-		closed:       false,
+		budget:              budget,
+		transactions:        []*Transaction{},
+		transactionCategory: map[string][]*Transaction{},
+		closed:              false,
 	}
 
 	if _, err := a.AddTransaction(date, balance, "Starting balance", tbb, nil); err != nil {
@@ -67,6 +69,14 @@ func (a *Account) AddTransaction(
 	}
 	if a.budget.latestMonth.LaterTime(date) {
 		a.budget.latestMonth = YearMonthFromTime(date)
+	}
+
+	if category != nil {
+		if _, ok := a.transactionCategory[category.uuid]; !ok {
+			a.transactionCategory[category.uuid] = []*Transaction{}
+		}
+
+		a.transactionCategory[category.uuid] = append(a.transactionCategory[category.uuid], t)
 	}
 
 	return t, nil

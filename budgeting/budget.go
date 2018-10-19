@@ -6,90 +6,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type YearMonth struct {
-	Year  int
-	Month time.Month
-}
-
-func YearMonthFromTime(t time.Time) YearMonth {
-	return YearMonth{
-		Year:  t.Year(),
-		Month: t.Month(),
-	}
-}
-
-func (m YearMonth) LastMonth() YearMonth {
-	if m.Month == time.January {
-		return YearMonth{
-			Year:  m.Year - 1,
-			Month: time.December,
-		}
-	}
-
-	return YearMonth{
-		Year:  m.Year,
-		Month: time.Month(int(m.Month) - 1),
-	}
-}
-
-func (m YearMonth) NextMonth() YearMonth {
-	if m.Month == time.December {
-		return YearMonth{
-			Year:  m.Year + 1,
-			Month: time.January,
-		}
-	}
-
-	return YearMonth{
-		Year:  m.Year,
-		Month: time.Month(int(m.Month) + 1),
-	}
-}
-
-func (m YearMonth) Earlier(other YearMonth) bool {
-	if other.Year < m.Year {
-		return true
-	}
-	if other.Year > m.Year {
-		return false
-	}
-	return int(other.Month) < int(m.Month)
-}
-
-func (m YearMonth) EarlierTime(t time.Time) bool {
-	if t.Year() < m.Year {
-		return true
-	}
-	if t.Year() > m.Year {
-		return false
-	}
-	return int(t.Month()) < int(m.Month)
-}
-
-func (m YearMonth) Later(other YearMonth) bool {
-	if other.Year > m.Year {
-		return true
-	}
-	if other.Year < m.Year {
-		return false
-	}
-	return int(other.Month) > int(m.Month)
-}
-
-func (m YearMonth) LaterTime(t time.Time) bool {
-	if t.Year() > m.Year {
-		return true
-	}
-	if t.Year() < m.Year {
-		return false
-	}
-	return int(t.Month()) > int(m.Month)
-}
-
-func (m YearMonth) Equal(other YearMonth) bool {
-	return m.Year == other.Year && m.Month == other.Month
-}
-
 type Budget struct {
 	Name string
 
@@ -211,9 +127,41 @@ func (b *Budget) TBB(month YearMonth) decimal.Decimal {
 }
 
 func (b *Budget) AddCategory(name string) *Category {
-	category := newCategory(name)
+	category := newCategory(name, b)
 	b.categories[category.uuid] = category
 	return category
+}
+
+func (b *Budget) Activities(month YearMonth, category *Category) decimal.Decimal {
+	activities := zero
+
+	// TODO: Optimize this by using lookup table
+	for _, a := range b.accounts {
+		transactions := []*Transaction{}
+		if _, ok := a.transactionCategory[category.uuid]; ok {
+			transactions = a.transactionCategory[category.uuid]
+		}
+
+		for _, t := range transactions {
+			if YearMonthFromTime(t.Date).Equal(month) {
+				activities = activities.Add(t.Amount)
+			}
+		}
+	}
+
+	return activities
+}
+
+func (b *Budget) Available(month YearMonth, category *Category) decimal.Decimal {
+	available := zero
+
+	if !b.earliestMonth.Earlier(month) {
+		available = available.Add(b.Available(month.LastMonth(), category))
+	}
+
+	available = available.Add(b.Budgeted(month, category).Add(b.Activities(month, category)))
+
+	return available
 }
 
 func (b *Budget) Budgeted(month YearMonth, category *Category) decimal.Decimal {
@@ -274,4 +222,88 @@ func (b *Budget) addTBBTransaction(month YearMonth, t *Transaction) {
 	}
 
 	b.tbbTransactions[month] = append(b.tbbTransactions[month], t)
+}
+
+type YearMonth struct {
+	Year  int
+	Month time.Month
+}
+
+func YearMonthFromTime(t time.Time) YearMonth {
+	return YearMonth{
+		Year:  t.Year(),
+		Month: t.Month(),
+	}
+}
+
+func (m YearMonth) LastMonth() YearMonth {
+	if m.Month == time.January {
+		return YearMonth{
+			Year:  m.Year - 1,
+			Month: time.December,
+		}
+	}
+
+	return YearMonth{
+		Year:  m.Year,
+		Month: time.Month(int(m.Month) - 1),
+	}
+}
+
+func (m YearMonth) NextMonth() YearMonth {
+	if m.Month == time.December {
+		return YearMonth{
+			Year:  m.Year + 1,
+			Month: time.January,
+		}
+	}
+
+	return YearMonth{
+		Year:  m.Year,
+		Month: time.Month(int(m.Month) + 1),
+	}
+}
+
+func (m YearMonth) Earlier(other YearMonth) bool {
+	if other.Year < m.Year {
+		return true
+	}
+	if other.Year > m.Year {
+		return false
+	}
+	return int(other.Month) < int(m.Month)
+}
+
+func (m YearMonth) EarlierTime(t time.Time) bool {
+	if t.Year() < m.Year {
+		return true
+	}
+	if t.Year() > m.Year {
+		return false
+	}
+	return int(t.Month()) < int(m.Month)
+}
+
+func (m YearMonth) Later(other YearMonth) bool {
+	if other.Year > m.Year {
+		return true
+	}
+	if other.Year < m.Year {
+		return false
+	}
+	return int(other.Month) > int(m.Month)
+}
+
+func (m YearMonth) LaterTime(t time.Time) bool {
+	if t.Year() > m.Year {
+		return true
+	}
+	if t.Year() < m.Year {
+		return false
+	}
+	return int(t.Month()) > int(m.Month)
+}
+
+func (m YearMonth) Equal(other YearMonth) bool {
+	return m.Year == other.Year && m.Month == other.Month
 }
