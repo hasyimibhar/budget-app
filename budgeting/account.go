@@ -11,7 +11,6 @@ import (
 var (
 	zero = decimal.New(0, -2)
 
-	ErrMustHaveCategory               = fmt.Errorf("an income or expense must have category")
 	ErrCannotAssignCategoryToTransfer = fmt.Errorf("a transfer cannot have category")
 )
 
@@ -48,20 +47,16 @@ func (a *Account) AddTransaction(
 	category *Category,
 	rel *Account) (*Transaction, error) {
 
-	if rel == nil && category == nil {
-		return nil, ErrMustHaveCategory
-	} else if rel != nil && category != nil {
+	if rel != nil && category != nil {
 		return nil, ErrCannotAssignCategoryToTransfer
 	}
 
-	t := newTransaction(a.budget, date, amount, description, category, rel)
+	t := newTransaction(a.budget, a, date, amount, description, category, rel)
 	a.transactions = append(a.transactions, t)
 
 	if rel != nil {
-		t2 := newTransaction(a.budget, date, amount.Neg(), description, category, a)
+		t2 := newTransaction(a.budget, rel, date, amount.Neg(), description, category, a)
 		rel.transactions = append(rel.transactions, t2)
-	} else if category.Equal(a.budget.TBBCategory()) {
-		a.budget.addTBBTransaction(YearMonthFromTime(date), t)
 	}
 
 	if a.budget.earliestMonth.EarlierTime(date) {
@@ -71,13 +66,7 @@ func (a *Account) AddTransaction(
 		a.budget.latestMonth = YearMonthFromTime(date)
 	}
 
-	if category != nil {
-		if _, ok := a.transactionCategory[category.uuid]; !ok {
-			a.transactionCategory[category.uuid] = []*Transaction{}
-		}
-
-		a.transactionCategory[category.uuid] = append(a.transactionCategory[category.uuid], t)
-	}
+	a.budget.setTransactionCategory(t, category)
 
 	return t, nil
 }

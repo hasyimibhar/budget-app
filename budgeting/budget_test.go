@@ -28,8 +28,8 @@ func TestBudget_SetBudgeted(t *testing.T) {
 	feb := YearMonth{2018, time.February}
 
 	budget.AddAccount("Savings", dec("100.00"), date(2018, 1, 1))
-	assert.True(budget.TBB(jan).Equal(dec("100.00")))
-	assert.True(budget.TBB(feb).Equal(dec("100.00"))) // TBB should carry over
+	assert.Equal(dec("100.00").StringFixed(2), budget.TBB(jan).StringFixed(2))
+	assert.Equal(dec("100.00").StringFixed(2), budget.TBB(feb).StringFixed(2)) // TBB should carry over
 
 	food := budget.AddCategory("Food & Beverages")
 	bills := budget.AddCategory("Bills")
@@ -37,13 +37,13 @@ func TestBudget_SetBudgeted(t *testing.T) {
 	budget.SetBudgeted(jan, food, dec("50.00"))
 	budget.SetBudgeted(jan, bills, dec("12.34"))
 
-	assert.True(budget.TBB(jan).Equal(dec("37.66")))
-	assert.True(budget.TBB(feb).Equal(dec("37.66"))) // TBB should carry over
+	assert.Equal(dec("37.66").StringFixed(2), budget.TBB(jan).StringFixed(2))
+	assert.Equal(dec("37.66").StringFixed(2), budget.TBB(feb).StringFixed(2)) // TBB should carry over
 
-	assert.True(budget.Budgeted(jan, food).Equal(dec("50.00")))
-	assert.True(budget.Budgeted(jan, bills).Equal(dec("12.34")))
-	assert.True(budget.Budgeted(feb, food).Equal(dec("0.00")))
-	assert.True(budget.Budgeted(feb, bills).Equal(dec("0.00")))
+	assert.Equal(dec("50.00").StringFixed(2), budget.Budgeted(jan, food).StringFixed(2))
+	assert.Equal(dec("12.34").StringFixed(2), budget.Budgeted(jan, bills).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), budget.Budgeted(feb, food).StringFixed(2))
+	assert.Equal(dec("0.00").StringFixed(2), budget.Budgeted(feb, bills).StringFixed(2))
 }
 
 func TestBudget_MoveBudgeted(t *testing.T) {
@@ -188,6 +188,9 @@ func TestBudget_Activities(t *testing.T) {
 	acc.AddTransaction(date(2018, 2, 10), dec("-15.00"), "fancy dinner", food, nil)
 	acc.AddTransaction(date(2018, 2, 2), dec("-4.00"), "water bill", bills, nil)
 
+	t1, _ := acc.AddTransaction(date(2018, 1, 2), dec("-10.00"), "some stuff", nil, nil)
+	t2, _ := acc.AddTransaction(date(2018, 2, 2), dec("-20.00"), "some other stuff", nil, nil)
+
 	assert.Equal(dec("50.00").StringFixed(2), food.Budgeted(jan).StringFixed(2))
 	assert.Equal(dec("-8.00").StringFixed(2), food.Activities(jan).StringFixed(2))
 	assert.Equal(dec("42.00").StringFixed(2), food.Available(jan).StringFixed(2))
@@ -219,4 +222,22 @@ func TestBudget_Activities(t *testing.T) {
 	assert.Equal(dec("0.00").StringFixed(2), bills.Budgeted(mar).StringFixed(2))
 	assert.Equal(dec("0.00").StringFixed(2), bills.Activities(mar).StringFixed(2))
 	assert.Equal(dec("13.00").StringFixed(2), bills.Available(mar).StringFixed(2))
+
+	t1.SetCategory(food)
+	t2.SetCategory(bills)
+
+	assert.Equal(dec("-18.00").StringFixed(2), food.Activities(jan).StringFixed(2))
+	assert.Equal(dec("32.00").StringFixed(2), food.Available(jan).StringFixed(2))
+
+	assert.Equal(dec("-24.00").StringFixed(2), bills.Activities(feb).StringFixed(2))
+	assert.Equal(dec("-7.00").StringFixed(2), bills.Available(feb).StringFixed(2))
+
+	t1.SetCategory(nil)
+	t2.SetCategory(nil)
+
+	assert.Equal(dec("-8.00").StringFixed(2), food.Activities(jan).StringFixed(2))
+	assert.Equal(dec("42.00").StringFixed(2), food.Available(jan).StringFixed(2))
+
+	assert.Equal(dec("-4.00").StringFixed(2), bills.Activities(feb).StringFixed(2))
+	assert.Equal(dec("13.00").StringFixed(2), bills.Available(feb).StringFixed(2))
 }

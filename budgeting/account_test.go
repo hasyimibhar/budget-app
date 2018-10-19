@@ -90,23 +90,6 @@ func TestAccount_AddTransactionDoubleEntry(t *testing.T) {
 	assert.True(wallet.Balance().Equal(dec("9.50")))
 }
 
-func TestAccount_AddTransactionIncomeExpenseWithoutCategory(t *testing.T) {
-	assert := assert.New(t)
-	b := NewBudget("My Budget")
-
-	account := b.AddAccount("Savings Account", dec("0.00"), date(2018, 1, 1))
-
-	tr, err := account.AddTransaction(date(2018, 1, 1), dec("10.00"), "got some money", nil, nil)
-	assert.Nil(tr)
-	assert.NotNil(err)
-	assert.EqualError(err, ErrMustHaveCategory.Error())
-
-	tr, err = account.AddTransaction(date(2018, 1, 1), dec("-3.00"), "spend some money", nil, nil)
-	assert.Nil(tr)
-	assert.NotNil(err)
-	assert.EqualError(err, ErrMustHaveCategory.Error())
-}
-
 func TestAccount_AddTransactionTransferWithCategory(t *testing.T) {
 	assert := assert.New(t)
 	b := NewBudget("My Budget")

@@ -9,13 +9,12 @@ import (
 type Budget struct {
 	Name string
 
-	earliestMonth   YearMonth
-	latestMonth     YearMonth
-	tbb             *Category
-	categories      map[string]*Category
-	accounts        []*Account
-	budgeted        map[YearMonth]monthBudget
-	tbbTransactions map[YearMonth][]*Transaction
+	earliestMonth YearMonth
+	latestMonth   YearMonth
+	tbb           *Category
+	categories    map[string]*Category
+	accounts      []*Account
+	budgeted      map[YearMonth]monthBudget
 }
 
 type monthBudget struct {
@@ -27,12 +26,11 @@ func NewBudget(name string) *Budget {
 	b := &Budget{
 		Name: name,
 
-		earliestMonth:   YearMonth{999999, time.December},
-		latestMonth:     YearMonth{0, time.January},
-		categories:      map[string]*Category{},
-		accounts:        []*Account{},
-		budgeted:        map[YearMonth]monthBudget{},
-		tbbTransactions: map[YearMonth][]*Transaction{},
+		earliestMonth: YearMonth{999999, time.December},
+		latestMonth:   YearMonth{0, time.January},
+		categories:    map[string]*Category{},
+		accounts:      []*Account{},
+		budgeted:      map[YearMonth]monthBudget{},
 	}
 
 	tbb := b.AddCategory("To Be Budgeted")
@@ -61,11 +59,7 @@ func (b *Budget) TBB(month YearMonth) decimal.Decimal {
 			break
 		}
 
-		transactions := []*Transaction{}
-		if _, ok := b.tbbTransactions[m]; ok {
-			transactions = b.tbbTransactions[m]
-		}
-
+		transactions := b.monthCategoryTransactions(m, b.tbb)
 		for _, t := range transactions {
 			tbb = tbb.Add(t.Amount)
 		}
@@ -135,18 +129,9 @@ func (b *Budget) AddCategory(name string) *Category {
 func (b *Budget) Activities(month YearMonth, category *Category) decimal.Decimal {
 	activities := zero
 
-	// TODO: Optimize this by using lookup table
-	for _, a := range b.accounts {
-		transactions := []*Transaction{}
-		if _, ok := a.transactionCategory[category.uuid]; ok {
-			transactions = a.transactionCategory[category.uuid]
-		}
-
-		for _, t := range transactions {
-			if YearMonthFromTime(t.Date).Equal(month) {
-				activities = activities.Add(t.Amount)
-			}
-		}
+	transactions := b.monthCategoryTransactions(month, category)
+	for _, t := range transactions {
+		activities = activities.Add(t.Amount)
 	}
 
 	return activities
@@ -216,12 +201,50 @@ func (b *Budget) MoveBudgeted(month YearMonth, from *Category, to *Category, amo
 	b.SetBudgeted(month, to, toAmount)
 }
 
-func (b *Budget) addTBBTransaction(month YearMonth, t *Transaction) {
-	if _, ok := b.tbbTransactions[month]; !ok {
-		b.tbbTransactions[month] = []*Transaction{}
+func (b *Budget) setTransactionCategory(t *Transaction, c *Category) {
+	transactions := []*Transaction{}
+
+	if t.Category() != nil {
+		transactions = t.account.transactionCategory[t.Category().uuid]
+		for i, tt := range transactions {
+			if tt.uuid == t.uuid {
+				transactions = append(transactions[:i], transactions[i+1:]...)
+				break
+			}
+		}
+
+		t.account.transactionCategory[t.Category().uuid] = transactions
 	}
 
-	b.tbbTransactions[month] = append(b.tbbTransactions[month], t)
+	if c != nil {
+		if _, ok := t.account.transactionCategory[c.uuid]; !ok {
+			t.account.transactionCategory[c.uuid] = []*Transaction{}
+		}
+
+		t.account.transactionCategory[c.uuid] = append(t.account.transactionCategory[c.uuid], t)
+	}
+
+	t.category = c
+}
+
+func (b *Budget) monthCategoryTransactions(month YearMonth, c *Category) []*Transaction {
+	allTransactions := []*Transaction{}
+
+	// TODO: Optimize this by using lookup table
+	for _, a := range b.accounts {
+		transactions := []*Transaction{}
+		if _, ok := a.transactionCategory[c.uuid]; ok {
+			transactions = a.transactionCategory[c.uuid]
+		}
+
+		for _, t := range transactions {
+			if YearMonthFromTime(t.Date).Equal(month) {
+				allTransactions = append(allTransactions, t)
+			}
+		}
+	}
+
+	return allTransactions
 }
 
 type YearMonth struct {

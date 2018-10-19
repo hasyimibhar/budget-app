@@ -14,12 +14,14 @@ type Transaction struct {
 
 	uuid     string
 	budget   *Budget
+	account  *Account
 	category *Category
 	rel      *Account
 }
 
 func newTransaction(
 	budget *Budget,
+	account *Account,
 	date time.Time,
 	amount decimal.Decimal,
 	description string,
@@ -33,6 +35,7 @@ func newTransaction(
 
 		uuid:     uuid.NewV4().String(),
 		budget:   budget,
+		account:  account,
 		category: category,
 		rel:      rel,
 	}
@@ -40,4 +43,8 @@ func newTransaction(
 
 func (t *Transaction) Category() *Category {
 	return t.category
+}
+
+func (t *Transaction) SetCategory(category *Category) {
+	t.budget.setTransactionCategory(t, category)
 }
