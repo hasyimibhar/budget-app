@@ -10,10 +10,16 @@ import (
 type TransactionType int
 
 const (
+	// TransactionTypeIncomeExpense means the money either enters the budget (income)
+	// or leaves the budget (expense).
 	TransactionTypeIncomeExpense TransactionType = iota + 1
+
+	// TransactionTypeTransfer means the money just moves between accounts within
+	// the budget (e.g. drawing money from the bank account into your wallet).
 	TransactionTypeTransfer
 )
 
+// Transaction represents a movement of money in the budget.
 type Transaction struct {
 	Date        time.Time
 	Description string
@@ -48,14 +54,17 @@ func newTransaction(
 	}
 }
 
+// Category returns the transactino category.
 func (t *Transaction) Category() *Category {
 	return t.category
 }
 
+// SetCategory sets the transaction category.
 func (t *Transaction) SetCategory(category *Category) error {
 	return t.budget.setTransactionCategory(t, category)
 }
 
+// Type returns the transaction type.
 func (t *Transaction) Type() TransactionType {
 	if t.rel == nil {
 		return TransactionTypeIncomeExpense

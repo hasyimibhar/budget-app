@@ -22,6 +22,7 @@ type monthBudget struct {
 	Budgeted map[string]decimal.Decimal
 }
 
+// NewBudget creates a fresh budget.
 func NewBudget(name string) *Budget {
 	b := &Budget{
 		Name: name,
@@ -39,16 +40,19 @@ func NewBudget(name string) *Budget {
 	return b
 }
 
+// AddAccount creates an account within the budget.
 func (b *Budget) AddAccount(name string, balance decimal.Decimal, date time.Time) *Account {
 	account, _ := newAccount(b, name, balance, date, b.tbb)
 	b.accounts = append(b.accounts, account)
 	return account
 }
 
+// TBBCategory returns the "To Be Budgeted" category.
 func (b *Budget) TBBCategory() *Category {
 	return b.tbb.clone()
 }
 
+// TBB returns the "To Be Budgeted" balance for the specified month.
 func (b *Budget) TBB(month YearMonth) decimal.Decimal {
 	tbb := zero
 	var m YearMonth
@@ -120,12 +124,14 @@ func (b *Budget) TBB(month YearMonth) decimal.Decimal {
 	return tbb
 }
 
+// AddCategory creates a budgeting category.
 func (b *Budget) AddCategory(name string) *Category {
 	category := newCategory(name, b)
 	b.categories[category.uuid] = category
 	return category
 }
 
+// Activities returns how much money has been spent for the category on the specified month.
 func (b *Budget) Activities(month YearMonth, category *Category) decimal.Decimal {
 	activities := zero
 
@@ -137,6 +143,7 @@ func (b *Budget) Activities(month YearMonth, category *Category) decimal.Decimal
 	return activities
 }
 
+// Available returns the available budget balance for the category on the specified month.
 func (b *Budget) Available(month YearMonth, category *Category) decimal.Decimal {
 	available := zero
 
@@ -149,6 +156,7 @@ func (b *Budget) Available(month YearMonth, category *Category) decimal.Decimal 
 	return available
 }
 
+// Budgeted returns the budgeted amount for the category on the specified month.
 func (b *Budget) Budgeted(month YearMonth, category *Category) decimal.Decimal {
 	if _, ok := b.budgeted[month]; !ok {
 		return zero
@@ -161,6 +169,7 @@ func (b *Budget) Budgeted(month YearMonth, category *Category) decimal.Decimal {
 	return b.budgeted[month].Budgeted[category.uuid]
 }
 
+// SetBudgeted sets the budgeted amount for the category on the specified month.
 func (b *Budget) SetBudgeted(month YearMonth, category *Category, amount decimal.Decimal) {
 	if category.Equal(b.tbb) {
 		return
@@ -183,6 +192,7 @@ func (b *Budget) SetBudgeted(month YearMonth, category *Category, amount decimal
 	}
 }
 
+// MoveBudgeted moves the budget balance from one category to another on the specified month.
 func (b *Budget) MoveBudgeted(month YearMonth, from *Category, to *Category, amount decimal.Decimal) {
 	if _, ok := b.budgeted[month]; !ok {
 		b.budgeted[month] = monthBudget{
@@ -252,11 +262,14 @@ func (b *Budget) monthCategoryTransactions(month YearMonth, c *Category) []*Tran
 	return allTransactions
 }
 
+// YearMonth is a helper struct for representing a month of a year
+// (e.g. May 2018).
 type YearMonth struct {
 	Year  int
 	Month time.Month
 }
 
+// YearMonthFromTime creates a YearMonth from a time.Time.
 func YearMonthFromTime(t time.Time) YearMonth {
 	return YearMonth{
 		Year:  t.Year(),
@@ -264,6 +277,7 @@ func YearMonthFromTime(t time.Time) YearMonth {
 	}
 }
 
+// LastMonth returns the previous month.
 func (m YearMonth) LastMonth() YearMonth {
 	if m.Month == time.January {
 		return YearMonth{
@@ -278,6 +292,7 @@ func (m YearMonth) LastMonth() YearMonth {
 	}
 }
 
+// NextMonth returns the next month.
 func (m YearMonth) NextMonth() YearMonth {
 	if m.Month == time.December {
 		return YearMonth{
@@ -292,6 +307,7 @@ func (m YearMonth) NextMonth() YearMonth {
 	}
 }
 
+// Earlier returns true if m is earlier than other.
 func (m YearMonth) Earlier(other YearMonth) bool {
 	if other.Year < m.Year {
 		return true
@@ -302,6 +318,7 @@ func (m YearMonth) Earlier(other YearMonth) bool {
 	return int(other.Month) < int(m.Month)
 }
 
+// EarlierTime returns true if m is earlier than t.
 func (m YearMonth) EarlierTime(t time.Time) bool {
 	if t.Year() < m.Year {
 		return true
@@ -312,6 +329,7 @@ func (m YearMonth) EarlierTime(t time.Time) bool {
 	return int(t.Month()) < int(m.Month)
 }
 
+// Later returns true if m is later than other.
 func (m YearMonth) Later(other YearMonth) bool {
 	if other.Year > m.Year {
 		return true
@@ -322,6 +340,7 @@ func (m YearMonth) Later(other YearMonth) bool {
 	return int(other.Month) > int(m.Month)
 }
 
+// LaterTime returns true if m is later than t.
 func (m YearMonth) LaterTime(t time.Time) bool {
 	if t.Year() > m.Year {
 		return true
@@ -332,6 +351,7 @@ func (m YearMonth) LaterTime(t time.Time) bool {
 	return int(t.Month()) > int(m.Month)
 }
 
+// Equal returns true if the both years and months are equal.
 func (m YearMonth) Equal(other YearMonth) bool {
 	return m.Year == other.Year && m.Month == other.Month
 }

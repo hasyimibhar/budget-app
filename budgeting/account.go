@@ -11,9 +11,13 @@ import (
 var (
 	zero = decimal.New(0, -2)
 
+	// ErrCannotAssignCategoryToTransfer is returned when there is an attempt
+	// to create a transfer transaction without a category.
 	ErrCannotAssignCategoryToTransfer = fmt.Errorf("a transfer cannot have category")
 )
 
+// Account represents a physical account which stores money
+// (e.g. savings account, your wallet).
 type Account struct {
 	Name string
 
@@ -40,6 +44,10 @@ func newAccount(budget *Budget, name string, balance decimal.Decimal, date time.
 	return a, nil
 }
 
+// AddTransaction creates a transaction on the account.
+// The rel argument is used to indicate a transfer between 2 accounts.
+// If rel is not nil, a matching transaction will be created on that account
+// (i.e. double entry bookkeeping).
 func (a *Account) AddTransaction(
 	date time.Time,
 	amount decimal.Decimal,
@@ -71,6 +79,7 @@ func (a *Account) AddTransaction(
 	return t, nil
 }
 
+// Balance returns the account balance.
 func (a *Account) Balance() decimal.Decimal {
 	transactions := a.transactions
 	sort.Sort(byDate(transactions))
